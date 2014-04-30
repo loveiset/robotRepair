@@ -20,7 +20,7 @@ public class GameScript : MonoBehaviour {
     Card[,] aGrids;
     List<Card> aCardsFlipped;
     bool playerCanClick;
-    bool palyerHasWon = false;
+    bool playerHasWon = false;
 
 	// Use this for initialization
 	void Start () 
@@ -39,7 +39,9 @@ public class GameScript : MonoBehaviour {
         {
             for (int j = 0; j < rows; j++)
             {
-                aGrids[i,j] = new Card();
+                int someNum = Random.Range(0, aCards.Count);
+                aGrids[i,j] = aCards[someNum];
+                aCards.RemoveAt(someNum);
             }
         }
 	}
@@ -53,6 +55,10 @@ public class GameScript : MonoBehaviour {
     {
         GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
         BuildGrid();
+        if (playerHasWon)
+        {
+            BuildWonPromot();
+        }
         GUILayout.EndArea();
     }
 
@@ -67,10 +73,33 @@ public class GameScript : MonoBehaviour {
             for (int j = 0; j < cols; j++)
             {
                 Card card = aGrids[i,j];
-                if (GUILayout.Button((Texture2D)Resources.Load(card.img),
+                string img;
+                if (card.isMatched)
+                {
+                    img = "blank";
+                }
+                else
+                {
+                    if (card.isFaceUp)
+                    {
+                        img = card.img;
+                    }
+                    else
+                    {
+                        img = "wrench";
+                    }
+                }
+
+                GUI.enabled = !card.isMatched;
+                if (GUILayout.Button((Texture2D)Resources.Load(img),
                     GUILayout.Width(cardW)))
                 {
-                    Debug.Log(card.img);
+                    if (playerCanClick)
+                    {
+                        StartCoroutine(FlipFaceUp(card));
+                        Debug.Log(card.img);
+                    }
+                    GUI.enabled = true;
                 }
             }
             GUILayout.FlexibleSpace();
@@ -82,8 +111,9 @@ public class GameScript : MonoBehaviour {
 
     void BuildDeck()
     {
+        int id = 0;
         int totalRobots = 4;
-        Card card = new Card();
+        //Card card;
         for (int i = 0; i < totalRobots; i++)
         {
             List<string> aRobotsParts = new List<string> {"Head","Arm","Leg"};
@@ -93,6 +123,52 @@ public class GameScript : MonoBehaviour {
                 string theMissingPart = aRobotsParts[someNum];
 
                 aRobotsParts.RemoveAt(someNum);
+
+                Card card = new Card("robot" + (i + 1) + "Missing" + theMissingPart, id);
+                aCards.Add(card);
+
+                Card card1 = new Card("robot" + (i + 1) + theMissingPart, id);
+                aCards.Add(card1);
+
+                id++;
+            }
+        }
+    }
+
+    IEnumerator FlipFaceUp(Card card)
+    {
+        card.isFaceUp = true;
+        Debug.Log(aCardsFlipped.IndexOf(card));
+        if (aCardsFlipped.IndexOf(card) < 0)
+        {
+            aCardsFlipped.Add(card);
+
+            if (aCardsFlipped.Count == 2)
+            {
+                playerCanClick = false;
+                yield return new WaitForSeconds(1);
+
+                if (aCardsFlipped[0].id == aCardsFlipped[1].id)
+                {
+                    aCardsFlipped[0].isMatched = true;
+                    aCardsFlipped[1].isMatched = true;
+
+                    matchesMade++;
+
+                    if (matchesMade >= matchesNeededToWin)
+                    {
+                        playerHasWon = true;
+                    }
+                }
+                else
+                {
+                    aCardsFlipped[0].isFaceUp = false;
+                    aCardsFlipped[1].isFaceUp = false;
+                }
+
+                aCardsFlipped.Clear();
+
+                playerCanClick = true;
             }
         }
     }
@@ -102,12 +178,14 @@ public class GameScript : MonoBehaviour {
         public bool isFaceUp = false;
         public bool isMatched = false;
         public string img;
+        public int id;
 
 
 
-        public Card()
+        public Card(string img, int id)
         {
-            img = "robot";
+            this.img = img;
+            this.id = id;
         }
     }
 }
