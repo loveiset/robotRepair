@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 
 public class GameScript : MonoBehaviour {
+    public GUISkin customSkin;
 
     int cols = 4;
     int rows = 4;
@@ -53,13 +54,37 @@ public class GameScript : MonoBehaviour {
 
     void OnGUI()
     {
+        GUI.skin = customSkin;
         GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
+        GUILayout.BeginHorizontal();
         BuildGrid();
-        if (playerHasWon)
+        //if (playerHasWon)
         {
             BuildWonPromot();
         }
+        GUILayout.EndHorizontal();
         GUILayout.EndArea();
+    }
+
+    void BuildWonPromot()
+    {
+        int winPromotW = 200;
+        int winPromotH = 120;
+
+        float halfScreenW = Screen.width / 2;
+        float halfScreenH = Screen.height / 2;
+
+        int halfPromotW = winPromotW / 2;
+        int halfPromotH = winPromotH / 2;
+
+        GUI.BeginGroup(new Rect(halfScreenW - halfPromotW, halfScreenH - halfPromotH, winPromotW, winPromotH));
+        GUI.Box(new Rect(0, 0, winPromotW, winPromotH), "YOU WIN!!!");
+        if (GUI.Button(new Rect(10, 40, 100, 30), "PLAY AGAIN"))
+        {
+            Debug.Log("press");
+            Application.LoadLevel("title");
+        }
+        GUI.EndGroup();
     }
 
     void BuildGrid()
@@ -99,8 +124,8 @@ public class GameScript : MonoBehaviour {
                         StartCoroutine(FlipFaceUp(card));
                         Debug.Log(card.img);
                     }
-                    GUI.enabled = true;
                 }
+                GUI.enabled = true;
             }
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
